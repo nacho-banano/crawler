@@ -1,16 +1,11 @@
-"""Binance data web-crawler."""
-
-import os
-from tempfile import NamedTemporaryFile
-from typing import List
 from warnings import catch_warnings, simplefilter
-from zipfile import ZipFile
+from typing import List
+from time import time
 
 import requests
 from bs4 import BeautifulSoup, Tag
 
 URL_S3: str = "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision"
-URL_BINANCE: str = "https://data.binance.vision"
 
 
 class BeautifulSoupProxy(BeautifulSoup):
@@ -65,10 +60,8 @@ def extract_key(document: BeautifulSoup) -> List[str]:
     ]
 
 
-def download_all(output_dir: str):
-    """Download all 1 minute klines from Binance's archive."""
-    # Ensure the output directory is present
-    os.makedirs(output_dir, exist_ok=True)
+def list_of_files() -> List[str]:
+    list_of_keys: List[str] = []
 
     parameters: dict = {
         "delimiter": "/",
@@ -88,17 +81,20 @@ def download_all(output_dir: str):
         parameters["marker"] = next_marker.get_text()
         response = requests.get(URL_S3, params=parameters, headers=headers)
         soup = BeautifulSoupProxy(response.text, features="lxml")
-        prefixes.extend(extract_prefix(soup))
-        next_marker: str = soup.find(  # re-set the ``next_marker``
-            "nextmarker"
-        )
+        next_prefixes: List[str] = extract_prefix(soup)
+        print(f"extending prefix {len(next_prefixes)}")
+        prefixes.extend(next_prefixes)
+        next_marker: str = soup.find("nextmarker")  # re-set the ``next_marker``
 
     for prefix in prefixes:
         parameters["prefix"] = f"{prefix}1m/"
         parameters["marker"] = "data/spot/daily/klines/"
+        t_0 = time()
         response = requests.get(URL_S3, params=parameters, headers=headers)
+        print("response time:", time() - t_0)
+        t_1 = time()
         soup = BeautifulSoupProxy(response.text, features="lxml")
-
+        print("soup time:", time() - t_1)
         file_keys: List[str] = extract_key(soup)
         next_marker: Tag = soup.find("nextmarker")
 
@@ -106,20 +102,11 @@ def download_all(output_dir: str):
             parameters["marker"] = next_marker.get_text()
             response = requests.get(URL_S3, params=parameters, headers=headers)
             soup = BeautifulSoupProxy(response.text, features="lxml")
-            file_keys.extend(extract_key(soup))
-            next_marker: str = soup.find(  # re-set the ``next_marker``
-                "nextmarker"
-            )
+            next_keys: List[str] = extract_key(soup)
+            print(f"{prefix}: extended keys by {len(next_keys)}")
+            file_keys.extend(next_keys)
+            next_marker: str = soup.find("nextmarker")  # re-set the ``next_marker``
 
-        for key in file_keys:
-            url: str = "/".join((URL_BINANCE, key))
-            response = requests.get(url)
+        list_of_keys.extend(file_keys)
 
-            with NamedTemporaryFile("wb") as tmp_file:
-                tmp_file.write(response.content)
-
-                with ZipFile(tmp_file.name, "r") as zip_archive:
-                    basename: str = os.path.basename(key).replace(
-                        ".zip", ".csv"
-                    )
-                    zip_archive.extract(basename, output_dir)
+    return list_of_keys

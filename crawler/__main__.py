@@ -1,11 +1,11 @@
 """TODO: Add description."""
 
-from crawler.binance import download_all
+# from crawler.binance.downloader import download
 
-if __name__ == "__main__":
-    DESTINATION_DIR: str = "/home/nacho/data"
+# if __name__ == "__main__":
+#     DESTINATION_DIR: str = "/home/nacho/data"
 
-    try:
-        download_all(DESTINATION_DIR)
-    except KeyboardInterrupt:
-        print("\nDownload interrupted by user")
+#     try:
+#         download([], DESTINATION_DIR)
+#     except KeyboardInterrupt:
+#         print("\nDownload interrupted by user")

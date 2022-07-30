@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "crawler"
-version = "0.1.0"
+version = "0.1.1"
 description = "Binance batch data web-crawler"
 authors = ["Hollywood <44089845+Vitali-Lupusor@users.noreply.github.com>"]
 
