@@ -11,7 +11,6 @@ from bs4 import BeautifulSoup, Tag
 
 URL_S3: str = "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision"
 URL_BINANCE: str = "https://data.binance.vision"
-DESTINATION_DIR: str = "./"
 
 
 class BeautifulSoupProxy(BeautifulSoup):
@@ -66,8 +65,11 @@ def extract_key(document: BeautifulSoup) -> List[str]:
     ]
 
 
-def download_all():
+def download_all(output_dir: str):
     """Download all 1 minute klines from Binance's archive."""
+    # Ensure the output directory is present
+    os.makedirs(output_dir, exist_ok=True)
+
     parameters: dict = {
         "delimiter": "/",
         "prefix": "data/spot/daily/klines/",
@@ -120,4 +122,4 @@ def download_all():
                     basename: str = os.path.basename(key).replace(
                         ".zip", ".csv"
                     )
-                    zip_archive.extract(basename, DESTINATION_DIR)
+                    zip_archive.extract(basename, output_dir)
