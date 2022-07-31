@@ -71,26 +71,21 @@ def extract_key(pair: str) -> List[str]:
 
     while START_DATE <= latest:
         keys.append(
-            (
-                f"{PREFIX}{pair}/{INTERVAL}/{pair}-{INTERVAL}-"
-                f"{latest:%Y-%m-%d}.zip"
-            )
+            (f"{PREFIX}{pair}/{INTERVAL}/{pair}-{INTERVAL}-" f"{latest:%Y-%m-%d}.zip")
         )
         latest -= timedelta(1)
 
     return keys
 
 
-def get_list_of_files() -> List[str]:
+def get_list_of_prefixes() -> List[str]:
     """
-    Generate a list of Binance archives for 1m kline data.
+    Generate a list of Binance prefixes.
 
     Returns
     -------
     List[str]
     """
-    list_of_files: List[str] = []
-
     parameters: dict = {
         "delimiter": "/",
         "prefix": PREFIX,
@@ -111,12 +106,32 @@ def get_list_of_files() -> List[str]:
         soup = BeautifulSoupProxy(response.text, features="lxml")
         next_prefixes: List[str] = extract_prefix(soup)
         prefixes.extend(next_prefixes)
-        next_marker: str = soup.find(
-            "nextmarker"
-        )  # re-set the ``next_marker``
+        next_marker: str = soup.find("nextmarker")  # re-set the ``next_marker``
 
-    for prefix in prefixes:
+    return prefixes
+
+
+def get_all_pairs(list_of_prefixes: List[str]) -> List[str]:
+    """
+    Generate a list of all pairs.
+
+    Parameters
+    ----------
+    list_of_prefixes : List[str]
+        A prefix that follows this pattern: "data/spot/daily/klines/<A_PAIRING>/"
+
+    Returns
+    -------
+    List[str]
+        A list of pairings, for example: ["BTCUSDT", "BTCBUSD", "ETHUSDT"]
+    """
+    list_of_pairs: List[str] = []
+    for prefix in list_of_prefixes:
         _, _, prefix = prefix.rstrip("/").rpartition("/")
-        list_of_files.extend(extract_key(prefix))
+        list_of_pairs.append(prefix)
 
-    return list_of_files
+    return list_of_pairs
+
+
+if __name__ == "__main__":
+    get_list_of_prefixes()

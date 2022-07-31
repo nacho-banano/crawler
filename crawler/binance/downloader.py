@@ -17,6 +17,9 @@ def download(file_keys: List[str], output_dir: str):
         url: str = "/".join((URL_BINANCE, key))
         response = requests.get(url)
 
+        if not response.ok:
+            continue
+
         with NamedTemporaryFile("wb") as tmp_file:
             tmp_file.write(response.content)
 
