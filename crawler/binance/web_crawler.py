@@ -1,11 +1,22 @@
+"""
+Binance web-crawler.
+
+Build a list of the Binance archive for 1 minute kline data.
+"""
+
+__author__ = "Nacho Banana"
+
+from datetime import datetime, timedelta
 from warnings import catch_warnings, simplefilter
 from typing import List
-from time import time
 
 import requests
 from bs4 import BeautifulSoup, Tag
 
 URL_S3: str = "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision"
+PREFIX: str = "data/spot/daily/klines/"
+INTERVAL: str = "1m"
+START_DATE: datetime = datetime(2021, 3, 1)
 
 
 class BeautifulSoupProxy(BeautifulSoup):
@@ -40,33 +51,50 @@ def extract_prefix(document: BeautifulSoup) -> List[str]:
     return [prefix.get_text() for prefix in document.find_all("prefix")][1:]
 
 
-def extract_key(document: BeautifulSoup) -> List[str]:
+def extract_key(pair: str) -> List[str]:
     """
-    Extract key tag from a parsed list of Binance S3 blobs.
+    Generate a list of keys for the provided pair.
+
+    The list represent the path to the file as determined by Binance Vision.
 
     Parameters
     ----------
-    document : BeautifulSoup
-        A data structure representing a parsed HTML or XML document.
+    pair : str
+        Crypto currency pair. Example: "BTCUSDT"
 
     Returns
     -------
     List[str]
     """
-    return [
-        key.get_text()
-        for key in document.find_all("key")
-        if not key.get_text().endswith(".CHECKSUM")
-    ]
+    keys: List[str] = []
+    latest: datetime = datetime.utcnow() - timedelta(1)
+
+    while START_DATE <= latest:
+        keys.append(
+            (
+                f"{PREFIX}{pair}/{INTERVAL}/{pair}-{INTERVAL}-"
+                f"{latest:%Y-%m-%d}.zip"
+            )
+        )
+        latest -= timedelta(1)
+
+    return keys
 
 
-def list_of_files() -> List[str]:
-    list_of_keys: List[str] = []
+def get_list_of_files() -> List[str]:
+    """
+    Generate a list of Binance archives for 1m kline data.
+
+    Returns
+    -------
+    List[str]
+    """
+    list_of_files: List[str] = []
 
     parameters: dict = {
         "delimiter": "/",
-        "prefix": "data/spot/daily/klines/",
-        "marker": "data/spot/daily/klines/",
+        "prefix": PREFIX,
+        "marker": PREFIX,
     }
     headers: dict = {"Content-Type": "application/xml"}
     response: requests.Response = requests.get(
@@ -82,31 +110,13 @@ def list_of_files() -> List[str]:
         response = requests.get(URL_S3, params=parameters, headers=headers)
         soup = BeautifulSoupProxy(response.text, features="lxml")
         next_prefixes: List[str] = extract_prefix(soup)
-        print(f"extending prefix {len(next_prefixes)}")
         prefixes.extend(next_prefixes)
-        next_marker: str = soup.find("nextmarker")  # re-set the ``next_marker``
+        next_marker: str = soup.find(
+            "nextmarker"
+        )  # re-set the ``next_marker``
 
     for prefix in prefixes:
-        parameters["prefix"] = f"{prefix}1m/"
-        parameters["marker"] = "data/spot/daily/klines/"
-        t_0 = time()
-        response = requests.get(URL_S3, params=parameters, headers=headers)
-        print("response time:", time() - t_0)
-        t_1 = time()
-        soup = BeautifulSoupProxy(response.text, features="lxml")
-        print("soup time:", time() - t_1)
-        file_keys: List[str] = extract_key(soup)
-        next_marker: Tag = soup.find("nextmarker")
+        _, _, prefix = prefix.rstrip("/").rpartition("/")
+        list_of_files.extend(extract_key(prefix))
 
-        while next_marker:
-            parameters["marker"] = next_marker.get_text()
-            response = requests.get(URL_S3, params=parameters, headers=headers)
-            soup = BeautifulSoupProxy(response.text, features="lxml")
-            next_keys: List[str] = extract_key(soup)
-            print(f"{prefix}: extended keys by {len(next_keys)}")
-            file_keys.extend(next_keys)
-            next_marker: str = soup.find("nextmarker")  # re-set the ``next_marker``
-
-        list_of_keys.extend(file_keys)
-
-    return list_of_keys
+    return list_of_files
