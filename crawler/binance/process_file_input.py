@@ -49,6 +49,30 @@ def get_triangular_zip_files(
     }
 
 
+def get_single_triangular_zip_files(list_of_prefixes: List[str]) -> Set[str]:
+    """
+    Use this for specific triangular path data downloads.
+
+    Parameters
+    ----------
+    list_of_prefixes : List[str]
+        A list of size 3 that contains a valid triangular path of prefixes,
+        for example:
+            [
+                "data/spot/daily/klines/BTCXNO",
+                "data/spot/daily/klines/XNOETH",
+                "data/spot/daily/klines/ETHBTC"
+            ]
+
+    Returns
+    -------
+    Set[str]
+        A set of file resources used to download zips from binance data based
+        on the input
+    """
+    return get_zip_list(list_of_prefixes)
+
+
 def get_triangles(bases: Set[str], list_of_prefixes: List[str]) -> dict:
     """
     Return a filtered list containing only pairs with valid triangular paths.
@@ -57,9 +81,6 @@ def get_triangles(bases: Set[str], list_of_prefixes: List[str]) -> dict:
     -------
     List[str]
     """
-    # TODO: solve this bitch
-    # a valid path is <base> -> <inter> -> <ticker> -> <base>
-    # need a list of bases
     result: dict = {}
     valid_path_set: Set[str] = set()
     valid_paths: List[dict] = []
@@ -78,7 +99,7 @@ def get_triangles(bases: Set[str], list_of_prefixes: List[str]) -> dict:
 
 def filter_list(base: str, pairs: Set[str]) -> dict:
     """
-    Creates a set of valid list of triangular pairs.
+    Create a set of valid list of triangular pairs.
 
     Parameters
     ----------
@@ -121,30 +142,6 @@ def filter_list(base: str, pairs: Set[str]) -> dict:
     result["valid_path_set"] = valid_path_set
     result["valid_paths"] = valid_paths
     return result
-
-
-def get_single_triangular_zip_files(list_of_prefixes: List[str]) -> Set[str]:
-    """
-    Use this for specific triangular path data downloads.
-
-    Parameters
-    ----------
-    list_of_prefixes : List[str]
-        A list of size 3 that contains a valid triangular path of prefixes,
-        for example:
-            [
-                "data/spot/daily/klines/BTCXNO",
-                "data/spot/daily/klines/XNOETH",
-                "data/spot/daily/klines/ETHBTC"
-            ]
-
-    Returns
-    -------
-    Set[str]
-        A set of file resources used to download zips from binance data based
-        on the input
-    """
-    return get_zip_list(list_of_prefixes)
 
 
 def get_zip_list(list_of_prefixes: List[str]) -> Set[str]:
