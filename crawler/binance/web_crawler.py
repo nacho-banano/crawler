@@ -29,9 +29,11 @@ class BeautifulSoupProxy(BeautifulSoup):
             super().__init__(*args, **kwargs)
 
     def insert_before(self, *args) -> None:
+        """For surpressing stuff."""
         raise NotImplementedError()
 
     def insert_after(self, *args) -> None:
+        """For surpressing stuff."""
         raise NotImplementedError()
 
 
@@ -71,7 +73,10 @@ def extract_key(pair: str) -> List[str]:
 
     while START_DATE <= latest:
         keys.append(
-            (f"{PREFIX}{pair}/{INTERVAL}/{pair}-{INTERVAL}-" f"{latest:%Y-%m-%d}.zip")
+            (
+                f"{PREFIX}{pair}/{INTERVAL}/{pair}-{INTERVAL}-"
+                f"{latest:%Y-%m-%d}.zip"
+            )
         )
         latest -= timedelta(1)
 
@@ -106,7 +111,9 @@ def get_list_of_prefixes() -> List[str]:
         soup = BeautifulSoupProxy(response.text, features="lxml")
         next_prefixes: List[str] = extract_prefix(soup)
         prefixes.extend(next_prefixes)
-        next_marker: str = soup.find("nextmarker")  # re-set the ``next_marker``
+        next_marker: str = soup.find(
+            "nextmarker"
+        )  # re-set the ``next_marker``
 
     return prefixes
 
@@ -118,7 +125,8 @@ def get_all_pairs(list_of_prefixes: List[str]) -> List[str]:
     Parameters
     ----------
     list_of_prefixes : List[str]
-        A prefix that follows this pattern: "data/spot/daily/klines/<A_PAIRING>/"
+        A prefix that follows this pattern:
+            "data/spot/daily/klines/<A_PAIRING>/"
 
     Returns
     -------

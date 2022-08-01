@@ -133,3 +133,6 @@ data/
 ~/
 dump/
 .vscode/
+
+list_of_prefixes
+list_of_resources
