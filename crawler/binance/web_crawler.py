@@ -8,7 +8,8 @@ __author__ = "Nacho Banana"
 
 from datetime import datetime, timedelta
 from warnings import catch_warnings, simplefilter
-from typing import List
+from typing import List, Set
+import json
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -17,6 +18,8 @@ URL_S3: str = "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision"
 PREFIX: str = "data/spot/daily/klines/"
 INTERVAL: str = "1m"
 START_DATE: datetime = datetime(2021, 3, 1)
+
+URL_BINANCE_EXCHANGE_INFO: str = "https://api.binance.com/api/v3/exchangeInfo"
 
 
 class BeautifulSoupProxy(BeautifulSoup):
@@ -141,5 +144,18 @@ def get_all_pairs(list_of_prefixes: List[str]) -> List[str]:
     return list_of_pairs
 
 
+def get_bases() -> Set[str]:
+    """Return a list of base tokens."""
+    response = requests.get(URL_BINANCE_EXCHANGE_INFO)
+    data: List[dict] = json.loads(response.text)["symbols"]
+    asset_set: Set[str] = set()
+    for entry in data:
+        asset_set.add(entry["baseAsset"])
+        asset_set.add(entry["quoteAsset"])
+
+    return asset_set
+
+
 if __name__ == "__main__":
-    get_list_of_prefixes()
+    # get_list_of_prefixes()
+    get_bases()

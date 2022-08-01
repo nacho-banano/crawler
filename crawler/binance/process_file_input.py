@@ -8,7 +8,7 @@ INTERVAL: str = "1m"
 START_DATE: datetime = datetime(2021, 3, 1)
 
 
-def get_all_files(list_of_prefixes: List[str]) -> Set[str]:
+def get_all_zip_files(list_of_prefixes: List[str]) -> Set[str]:
     """
     Use this to get a list of prefixes.
 
@@ -22,10 +22,12 @@ def get_all_files(list_of_prefixes: List[str]) -> Set[str]:
     Set[str]
         A set of file resources used to download zips from binance data
     """
-    return get_resource_set(list_of_prefixes)
+    return get_zip_list(list_of_prefixes)
 
 
-def get_all_triangle_candidate_list(list_of_prefixes: List[str]) -> Set[str]:
+def get_triangular_zip_files(
+    bases: Set[str], list_of_prefixes: List[str]
+) -> dict:
     """
     When given a list of prefixes it will remove all pairs that cannot be \
     used in triangular arbitrage.
@@ -40,10 +42,14 @@ def get_all_triangle_candidate_list(list_of_prefixes: List[str]) -> Set[str]:
     Set[str]
         A filtered set with valid triangular pairings
     """
-    return get_resource_set(get_triangles(list_of_prefixes))
+    result: dict = get_triangles(bases, list_of_prefixes)
+    return {
+        "valid_path_set": get_zip_list(result["valid_path_set"]),
+        "valid_paths": result["valid_paths"],
+    }
 
 
-def get_triangles(list_of_prefixes: List[str]) -> List[str]:
+def get_triangles(bases: Set[str], list_of_prefixes: List[str]) -> dict:
     """
     Return a filtered list containing only pairs with valid triangular paths.
 
@@ -52,10 +58,72 @@ def get_triangles(list_of_prefixes: List[str]) -> List[str]:
     List[str]
     """
     # TODO: solve this bitch
-    ...
+    # a valid path is <base> -> <inter> -> <ticker> -> <base>
+    # need a list of bases
+    result: dict = {}
+    valid_path_set: Set[str] = set()
+    valid_paths: List[dict] = []
+    for base in bases:
+        filter_results = filter_list(base, get_all_pairs(list_of_prefixes))
+        for filter_result in filter_results["valid_path_set"]:
+            valid_path_set.add(filter_result)
+        for filter_result in filter_results["valid_paths"]:
+            valid_paths.append(filter_result)
+
+    result["valid_path_set"] = valid_path_set
+    result["valid_paths"] = valid_paths
+
+    return result
 
 
-def get_triangle(list_of_prefixes: List[str]) -> Set[str]:
+def filter_list(base: str, pairs: Set[str]) -> dict:
+    """
+    Creates a set of valid list of triangular pairs.
+
+    Parameters
+    ----------
+    base : str
+        _description_
+    pairs : Set[str]
+        _description_
+
+    Returns
+    -------
+    Set[str]
+        _description_
+    """
+    result: dict = {}
+    valid_path_set: Set[str] = set()
+    valid_paths: List[dict] = []
+    for step_one in pairs:
+        # check if the base is in the pair
+        if base in step_one:
+            intermediate: str = step_one.replace(base, "")
+            for step_two in pairs:
+                if intermediate in step_two and base not in step_two:
+                    ticker: str = step_two.replace(intermediate, "")
+                    for step_three in pairs:
+                        if (
+                            base in step_three
+                            and ticker in step_three
+                            and intermediate not in step_three
+                        ):
+                            valid_path_set.add(step_one)
+                            valid_path_set.add(step_two)
+                            valid_path_set.add(step_three)
+                            valid_paths.append(
+                                {
+                                    "base": step_one,
+                                    "intermediate": step_two,
+                                    "ticker": step_three,
+                                }
+                            )
+    result["valid_path_set"] = valid_path_set
+    result["valid_paths"] = valid_paths
+    return result
+
+
+def get_single_triangular_zip_files(list_of_prefixes: List[str]) -> Set[str]:
     """
     Use this for specific triangular path data downloads.
 
@@ -76,10 +144,10 @@ def get_triangle(list_of_prefixes: List[str]) -> Set[str]:
         A set of file resources used to download zips from binance data based
         on the input
     """
-    return get_resource_set(list_of_prefixes)
+    return get_zip_list(list_of_prefixes)
 
 
-def get_resource_set(list_of_prefixes: List[str]) -> Set[str]:
+def get_zip_list(list_of_prefixes: List[str]) -> Set[str]:
     """
     Get a set of resources used in downloading.
 
@@ -95,7 +163,7 @@ def get_resource_set(list_of_prefixes: List[str]) -> Set[str]:
     """
     resource_set: Set[str] = set()
     for prefix in get_all_pairs(list_of_prefixes):
-        for key in extract_key(prefix):
+        for key in generate_zip_list(prefix):
             resource_set.add(key)
 
     return resource_set
@@ -124,7 +192,7 @@ def get_all_pairs(list_of_prefixes: List[str]) -> Set[str]:
     return list_of_pairs
 
 
-def extract_key(pair: str) -> Set[str]:
+def generate_zip_list(pair: str) -> Set[str]:
     """
     Generate a list of keys for the provided pair.
 

@@ -136,3 +136,6 @@ dump/
 
 list_of_prefixes
 list_of_resources
+list_of_bases
+list_of_triangles
+triangles_path.json
