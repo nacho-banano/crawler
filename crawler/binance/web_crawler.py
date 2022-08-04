@@ -32,11 +32,11 @@ class BeautifulSoupProxy(BeautifulSoup):
             super().__init__(*args, **kwargs)
 
     def insert_before(self, *args) -> None:
-        """For surpressing stuff."""
+        """For suppressing stuff."""
         raise NotImplementedError()
 
     def insert_after(self, *args) -> None:
-        """For surpressing stuff."""
+        """For suppressing stuff."""
         raise NotImplementedError()
 
 
@@ -137,6 +137,7 @@ def get_all_pairs(list_of_prefixes: List[str]) -> List[str]:
         A list of pairings, for example: ["BTCUSDT", "BTCBUSD", "ETHUSDT"]
     """
     list_of_pairs: List[str] = []
+
     for prefix in list_of_prefixes:
         _, _, prefix = prefix.rstrip("/").rpartition("/")
         list_of_pairs.append(prefix)
@@ -149,6 +150,7 @@ def get_bases() -> Set[str]:
     response = requests.get(URL_BINANCE_EXCHANGE_INFO)
     data: List[dict] = json.loads(response.text)["symbols"]
     asset_set: Set[str] = set()
+
     for entry in data:
         asset_set.add(entry["baseAsset"])
         asset_set.add(entry["quoteAsset"])

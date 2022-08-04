@@ -1,7 +1,7 @@
 """TODO: Add description."""
+
 import json
 from os.path import exists
-
 from typing import List, Set
 
 from crawler.binance.web_crawler import get_bases, get_list_of_prefixes
@@ -28,6 +28,7 @@ if not exists(LIST_OF_PREFIXES_PATH):
     with open(LIST_OF_PREFIXES_PATH, "w", encoding="UTF-8") as file:
         for prefix in lop:
             file.write(prefix + "\n")
+
 else:
     with open(LIST_OF_PREFIXES_PATH, "r", encoding="UTF-8") as file:
         for entry in file.readlines():
@@ -53,6 +54,7 @@ if not exists(LIST_OF_BASES_PATH):
     with open(LIST_OF_BASES_PATH, "w", encoding="UTF-8") as file:
         for resource in lob:
             file.write(resource + "\n")
+
 else:
     with open(LIST_OF_BASES_PATH, "r", encoding="UTF-8") as file:
         for entry in file.readlines():
@@ -64,19 +66,24 @@ triangles_exist: bool = exists(TRIANGLES_PATH)
 if not list_of_triangles_exists or not triangles_exist:
     # Get all bases
     lot = get_triangular_zip_files(lob, lop)
+
     # Write the base tokens to a file
     if not list_of_triangles_exists:
         with open(LIST_OF_TRIANGLES_PATH, "w", encoding="UTF-8") as file:
             for resource in lot["valid_path_set"]:
                 file.write(resource + "\n")
+
     if not triangles_exist:
         with open(TRIANGLES_PATH, "w", encoding="UTF-8") as file:
             json.dump(lot["valid_paths"], file, indent=2)
+
 else:
     with open(LIST_OF_TRIANGLES_PATH, "r", encoding="UTF-8") as file:
         the_set_i_build_now: Set[str] = set()
+
         for entry in file.readlines():
             the_set_i_build_now.add(entry.replace("\n", ""))
+
         lot["valid_path_set"] = the_set_i_build_now
 
     with open(TRIANGLES_PATH, "r", encoding="UTF-8") as file:

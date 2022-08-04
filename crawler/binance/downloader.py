@@ -1,7 +1,8 @@
+"""TODO: Add description."""
+
 import os
 from tempfile import NamedTemporaryFile
 from typing import List
-
 from zipfile import ZipFile
 
 import requests
@@ -13,6 +14,7 @@ def download(file_keys: List[str], output_dir: str):
     """Download all 1 minute klines from Binance's archive."""
     # Ensure the output directory is present
     os.makedirs(output_dir, exist_ok=True)
+
     for key in file_keys:
         url: str = "/".join((URL_BINANCE, key))
         response = requests.get(url)

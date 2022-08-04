@@ -43,6 +43,7 @@ def get_triangular_zip_files(
         A filtered set with valid triangular pairings
     """
     result: dict = get_triangles(bases, list_of_prefixes)
+
     return {
         "valid_path_set": get_zip_list(result["valid_path_set"]),
         "valid_paths": result["valid_paths"],
@@ -84,10 +85,13 @@ def get_triangles(bases: Set[str], list_of_prefixes: List[str]) -> dict:
     result: dict = {}
     valid_path_set: Set[str] = set()
     valid_paths: List[dict] = []
+
     for base in bases:
         filter_results = filter_list(base, get_all_pairs(list_of_prefixes))
+
         for filter_result in filter_results["valid_path_set"]:
             valid_path_set.add(filter_result)
+
         for filter_result in filter_results["valid_paths"]:
             valid_paths.append(filter_result)
 
@@ -95,6 +99,25 @@ def get_triangles(bases: Set[str], list_of_prefixes: List[str]) -> dict:
     result["valid_paths"] = valid_paths
 
     return result
+
+
+def _coin_in_pair(coin: str, pair: str) -> bool:
+    """
+    TODO: Add description.
+
+    Parameters
+    ----------
+    coin : str
+        _description_
+    pair : str
+        _description_
+
+    Returns
+    -------
+    bool
+        _description_
+    """
+    return pair.startswith(coin) or pair.endswith(coin)
 
 
 def filter_list(base: str, pairs: Set[str]) -> dict:
@@ -116,18 +139,22 @@ def filter_list(base: str, pairs: Set[str]) -> dict:
     result: dict = {}
     valid_path_set: Set[str] = set()
     valid_paths: List[dict] = []
+
     for step_one in pairs:
         # check if the base is in the pair
-        if base in step_one:
+        if _coin_in_pair(base, step_one):
             intermediate: str = step_one.replace(base, "")
+
             for step_two in pairs:
-                if intermediate in step_two and base not in step_two:
+                if _coin_in_pair(intermediate, step_two) and not _coin_in_pair(
+                    base, step_two
+                ):
                     ticker: str = step_two.replace(intermediate, "")
+
                     for step_three in pairs:
                         if (
-                            base in step_three
-                            and ticker in step_three
-                            and intermediate not in step_three
+                            step_three.replace(base, "") == ticker
+                            and step_three.replace(ticker, "") == base
                         ):
                             valid_path_set.add(step_one)
                             valid_path_set.add(step_two)
@@ -139,8 +166,10 @@ def filter_list(base: str, pairs: Set[str]) -> dict:
                                     "ticker": step_three,
                                 }
                             )
+
     result["valid_path_set"] = valid_path_set
     result["valid_paths"] = valid_paths
+
     return result
 
 
@@ -159,7 +188,9 @@ def get_zip_list(list_of_prefixes: List[str]) -> Set[str]:
         _description_
     """
     resource_set: Set[str] = set()
+
     for prefix in get_all_pairs(list_of_prefixes):
+
         for key in generate_zip_list(prefix):
             resource_set.add(key)
 
@@ -182,6 +213,7 @@ def get_all_pairs(list_of_prefixes: List[str]) -> Set[str]:
         A list of pairings, for example: ["BTCUSDT", "BTCBUSD", "ETHUSDT"]
     """
     list_of_pairs: Set[str] = set()
+
     for prefix in list_of_prefixes:
         _, _, prefix = prefix.rstrip("/").rpartition("/")
         list_of_pairs.add(prefix)
