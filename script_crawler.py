@@ -9,12 +9,14 @@ from crawler.binance.process_file_input import (
     get_all_zip_files,
     get_triangular_zip_files,
 )
+from consts import (
+    LIST_OF_PREFIXES_PATH,
+    LIST_OF_RESOURCES_PATH,
+    LIST_OF_BASES_PATH,
+    LIST_OF_TRIANGLES_PATH,
+    TRIANGLES_PATH,
+)
 
-LIST_OF_PREFIXES_PATH: str = "./list_of_prefixes"
-LIST_OF_RESOURCES_PATH: str = "./list_of_resources"
-LIST_OF_BASES_PATH: str = "./list_of_bases"
-LIST_OF_TRIANGLES_PATH: str = "./list_of_triangles"
-TRIANGLES_PATH: str = "./triangles_path.json"
 
 lop: List[str] = []
 lor: Set[str] = set()
