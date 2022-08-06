@@ -156,8 +156,3 @@ def get_bases() -> Set[str]:
         asset_set.add(entry["quoteAsset"])
 
     return asset_set
-
-
-if __name__ == "__main__":
-    # get_list_of_prefixes()
-    get_bases()

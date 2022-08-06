@@ -5,10 +5,7 @@ from os.path import exists
 from typing import List, Set
 
 from crawler.binance.web_crawler import get_bases, get_list_of_prefixes
-from crawler.binance.process_file_input import (
-    get_all_zip_files,
-    get_triangular_zip_files,
-)
+from crawler.binance.process_file_input import Processing
 from consts import (
     LIST_OF_PREFIXES_PATH,
     LIST_OF_RESOURCES_PATH,
@@ -23,6 +20,18 @@ lor: Set[str] = set()
 lob: Set[str] = set()
 lot: dict = {}
 
+if not exists(LIST_OF_BASES_PATH):
+    # Get all bases
+    lob = get_bases()
+    # Write the base tokens to a file
+    with open(LIST_OF_BASES_PATH, "w", encoding="UTF-8") as file:
+        for resource in lob:
+            file.write(resource + "\n")
+else:
+    with open(LIST_OF_BASES_PATH, "r", encoding="UTF-8") as file:
+        for entry in file.readlines():
+            lob.add(entry.replace("\n", ""))
+
 if not exists(LIST_OF_PREFIXES_PATH):
     # Crawl the web page and create file prefixes for each available pairing
     lop = get_list_of_prefixes()
@@ -30,15 +39,16 @@ if not exists(LIST_OF_PREFIXES_PATH):
     with open(LIST_OF_PREFIXES_PATH, "w", encoding="UTF-8") as file:
         for prefix in lop:
             file.write(prefix + "\n")
-
 else:
     with open(LIST_OF_PREFIXES_PATH, "r", encoding="UTF-8") as file:
         for entry in file.readlines():
             lop.append(entry.replace("\n", ""))
 
+processing: Processing = Processing(lob, lop)
+
 if not exists(LIST_OF_RESOURCES_PATH):
     # Get all file resources for downloading
-    lor = get_all_zip_files(lop)
+    lor = processing.get_all_zip_files()
     # Write the resource paths to a file
     with open(LIST_OF_RESOURCES_PATH, "w", encoding="UTF-8") as file:
         for resource in lor:
@@ -48,26 +58,11 @@ else:
         for entry in file.readlines():
             lor.add(entry.replace("\n", ""))
 
-
-if not exists(LIST_OF_BASES_PATH):
-    # Get all bases
-    lob = get_bases()
-    # Write the base tokens to a file
-    with open(LIST_OF_BASES_PATH, "w", encoding="UTF-8") as file:
-        for resource in lob:
-            file.write(resource + "\n")
-
-else:
-    with open(LIST_OF_BASES_PATH, "r", encoding="UTF-8") as file:
-        for entry in file.readlines():
-            lob.add(entry.replace("\n", ""))
-
-
 list_of_triangles_exists: bool = exists(LIST_OF_TRIANGLES_PATH)
 triangles_exist: bool = exists(TRIANGLES_PATH)
 if not list_of_triangles_exists or not triangles_exist:
     # Get all bases
-    lot = get_triangular_zip_files(lob, lop)
+    lot = processing.get_triangular_zip_files()
 
     # Write the base tokens to a file
     if not list_of_triangles_exists:

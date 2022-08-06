@@ -1,6 +1,7 @@
 """Script for downloading files from binance vision."""
 
 import os
+import sys
 from typing import List
 
 from crawler.binance.downloader import download
@@ -22,4 +23,8 @@ downloader_input = [
     not in directory_contents
 ]
 
-download(downloader_input, DATA_DIRECTORY)
+try:
+    download(downloader_input, DATA_DIRECTORY)
+except KeyboardInterrupt:
+    print("\nDownload interrupted by user.")
+    sys.exit(1)
