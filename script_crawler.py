@@ -2,7 +2,7 @@
 
 import json
 from os.path import exists
-from typing import List, Set
+from typing import Dict, List, Set
 
 from crawler.binance.web_crawler import get_bases, get_list_of_prefixes
 from crawler.binance.process_file_input import Processing
@@ -16,7 +16,7 @@ from consts import (
 
 
 lop: List[str] = []
-lor: Set[str] = set()
+lor: Dict[str, List[str]] = {}
 lob: Set[str] = set()
 lot: dict = {}
 
@@ -51,12 +51,10 @@ if not exists(LIST_OF_RESOURCES_PATH):
     lor = processing.get_all_zip_files()
     # Write the resource paths to a file
     with open(LIST_OF_RESOURCES_PATH, "w", encoding="UTF-8") as file:
-        for resource in lor:
-            file.write(resource + "\n")
-else:
-    with open(LIST_OF_RESOURCES_PATH, "r", encoding="UTF-8") as file:
-        for entry in file.readlines():
-            lor.add(entry.replace("\n", ""))
+        json.dump(lor, file, indent=2)
+# else:
+#     with open(LIST_OF_RESOURCES_PATH, "r", encoding="UTF-8") as file:
+#         lor = json.load(file)
 
 list_of_triangles_exists: bool = exists(LIST_OF_TRIANGLES_PATH)
 triangles_exist: bool = exists(TRIANGLES_PATH)
@@ -67,21 +65,8 @@ if not list_of_triangles_exists or not triangles_exist:
     # Write the base tokens to a file
     if not list_of_triangles_exists:
         with open(LIST_OF_TRIANGLES_PATH, "w", encoding="UTF-8") as file:
-            for resource in lot["valid_path_set"]:
-                file.write(resource + "\n")
+            json.dump(lot["valid_path_set"], file, indent=2)
 
     if not triangles_exist:
         with open(TRIANGLES_PATH, "w", encoding="UTF-8") as file:
             json.dump(lot["valid_paths"], file, indent=2)
-
-else:
-    with open(LIST_OF_TRIANGLES_PATH, "r", encoding="UTF-8") as file:
-        the_set_i_build_now: Set[str] = set()
-
-        for entry in file.readlines():
-            the_set_i_build_now.add(entry.replace("\n", ""))
-
-        lot["valid_path_set"] = the_set_i_build_now
-
-    with open(TRIANGLES_PATH, "r", encoding="UTF-8") as file:
-        lot["valid_paths"] = json.load(file)

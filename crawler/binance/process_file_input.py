@@ -1,7 +1,7 @@
 """TODO: Add description."""
 
 from logging import Logger, getLogger
-from typing import Collection, Set, List
+from typing import Collection, Dict, Set, List
 from datetime import datetime, timedelta
 
 
@@ -25,18 +25,18 @@ class Processing:
         """
         self._bases: Collection[str] = bases
         self._prefixes: List[str] = prefixes
-        self._logger: Logger = getLogger(self.__class__)
+        self._logger: Logger = getLogger(self.__class__.__name__)
 
-    def get_all_zip_files(self) -> Set[str]:
+    def get_all_zip_files(self) -> Dict[str, List[str]]:
         """
         Use this to get a list of prefixes.
 
         Returns
         -------
-        Set[str]
-            A set of file resources used to download zips from binance data
+        Dict[str, List[str]]
+            A collection of file resources used to download zips from binance.
         """
-        return self._get_zip_list(self._prefixes)
+        return self._get_zip_dict(self._prefixes)
 
     def get_triangular_zip_files(self) -> dict:
         """
@@ -47,19 +47,19 @@ class Processing:
 
         Returns
         -------
-        Set[str]
-            A filtered set with valid triangular pairings
+        dict
+            A filtered dictionary with valid triangular pairings.
         """
         result: dict = self.get_triangles()
 
         return {
-            "valid_path_set": self._get_zip_list(result["valid_path_set"]),
+            "valid_path_set": self._get_zip_dict(result["valid_path_set"]),
             "valid_paths": result["valid_paths"],
         }
 
     def get_single_triangular_zip_files(
         self, triangle: Collection[str]
-    ) -> Set[str]:
+    ) -> Dict[str, List[str]]:
         """
         Use this for specific triangular path data downloads.
 
@@ -76,11 +76,11 @@ class Processing:
 
         Returns
         -------
-        Set[str]
-            A set of file resources used to download zips from binance data
-            based on the input.
+        Dict[str, List[str]]
+            A dictionary of file resources used to download zips from binance
+            data based on the input.
         """
-        return self._get_zip_list(triangle)
+        return self._get_zip_dict(triangle)
 
     def get_triangles(self) -> dict:
         """
@@ -88,7 +88,7 @@ class Processing:
 
         Returns
         -------
-        List[str]
+        dict
         """
         result: dict = {}
         valid_path_set: Set[str] = set()
@@ -123,7 +123,7 @@ class Processing:
 
         Returns
         -------
-        Set[str]
+        dict
             _description_
         """
         result: dict = {}
@@ -132,13 +132,13 @@ class Processing:
 
         for step_one in pairs:
             # check if the base is in the pair
-            if self._coin_in_pair(base, step_one):
+            if self.coin_in_pair(base, step_one):
                 intermediate: str = step_one.replace(base, "")
 
                 for step_two in pairs:
-                    if self._coin_in_pair(
+                    if self.coin_in_pair(
                         intermediate, step_two
-                    ) and not self._coin_in_pair(base, step_two):
+                    ) and not self.coin_in_pair(base, step_two):
                         ticker: str = step_two.replace(intermediate, "")
 
                         step_three: str = (
@@ -166,9 +166,9 @@ class Processing:
 
         return result
 
-    def _get_zip_list(self, prefixes: List[str]) -> Set[str]:
+    def _get_zip_dict(self, prefixes: List[str]) -> Dict[str, List[str]]:
         """
-        Get a set of resources used in downloading.
+        Get a dictionary of resources used in downloading.
 
         Parameters
         ----------
@@ -177,17 +177,18 @@ class Processing:
 
         Returns
         -------
-        Set[str]
+        Dict[str, List[str]]
             _description_
         """
-        resource_set: Set[str] = set()
+        resource_dict: Dict[str, List[str]] = {}
 
         for prefix in self._get_all_pairs(prefixes):
+            resource_dict[prefix] = sorted(
+                self._generate_zip_list(prefix),
+                reverse=True,
+            )
 
-            for key in self._generate_zip_list(prefix):
-                resource_set.add(key)
-
-        return resource_set
+        return resource_dict
 
     def _generate_zip_list(self, pair: str) -> Set[str]:
         """
@@ -203,7 +204,7 @@ class Processing:
 
         Returns
         -------
-        List[str]
+        Set[str]
         """
         keys: Set[str] = set()
         latest: datetime = datetime.utcnow() - timedelta(1)
@@ -219,27 +220,7 @@ class Processing:
 
         return keys
 
-    @staticmethod
-    def _coin_in_pair(coin: str, pair: str) -> bool:
-        """
-        TODO: Add description.
-
-        Parameters
-        ----------
-        coin : str
-            _description_
-        pair : str
-            _description_
-
-        Returns
-        -------
-        bool
-            _description_
-        """
-        return pair.startswith(coin) or pair.endswith(coin)
-
-    @staticmethod
-    def _get_all_pairs(prefixes: List[str]) -> Set[str]:
+    def _get_all_pairs(self, prefixes: List[str]) -> Set[str]:
         """
         Generate a list of all pairs.
 
@@ -257,7 +238,53 @@ class Processing:
         list_of_pairs: Set[str] = set()
 
         for prefix in prefixes:
-            _, _, prefix = prefix.rstrip("/").rpartition("/")
+            prefix = self.get_pair(prefix)
             list_of_pairs.add(prefix)
 
         return list_of_pairs
+
+    @staticmethod
+    def get_pair(prefix: str) -> str:
+        """
+        Extract the pair from a string of prefixes.
+
+        Parameters
+        ----------
+        prefix : str
+            Something that looks like this:
+            "data/spot/daily/klines/<A_PAIRING>/"
+
+        Returns
+        -------
+        str
+            Pair element of the prefix.
+
+        Example
+        -------
+        >>> prefix: str = "data/spot/daily/klines/BTC/"
+        >>> pair = Processing.get_pair(prefix)
+        >>> print(pair)
+        "BTC"
+        """
+        _, _, pair = prefix.rstrip("/").rpartition("/")
+
+        return pair
+
+    @staticmethod
+    def coin_in_pair(coin: str, pair: str) -> bool:
+        """
+        TODO: Add description.
+
+        Parameters
+        ----------
+        coin : str
+            _description_
+        pair : str
+            _description_
+
+        Returns
+        -------
+        bool
+            _description_
+        """
+        return pair.startswith(coin) or pair.endswith(coin)

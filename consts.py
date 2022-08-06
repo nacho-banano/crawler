@@ -1,8 +1,8 @@
-"""List of constants for use acraoss scrits."""
+"""List of constants for use across scripts."""
 
 LIST_OF_PREFIXES_PATH: str = "./list_of_prefixes"
-LIST_OF_RESOURCES_PATH: str = "./list_of_resources"
+LIST_OF_RESOURCES_PATH: str = "./list_of_resources.json"
 LIST_OF_BASES_PATH: str = "./list_of_bases"
-LIST_OF_TRIANGLES_PATH: str = "./list_of_triangles"
+LIST_OF_TRIANGLES_PATH: str = "./list_of_triangles.json"
 TRIANGLES_PATH: str = "./triangles_path.json"
 DATA_DIRECTORY: str = "/home/nacho/data"

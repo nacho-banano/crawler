@@ -2,7 +2,9 @@
 
 import os
 import sys
-from typing import List
+from json import load
+from logging import getLogger, Logger
+from typing import Dict, List
 
 from crawler.binance.downloader import download
 
@@ -11,19 +13,29 @@ from consts import LIST_OF_TRIANGLES_PATH, DATA_DIRECTORY
 # get our input file
 # a location as we will ls this directory
 
+logger: Logger = getLogger(__name__)
+
+logger.debug("Creating a list of existing files ...")
 directory_contents: List[str] = os.listdir(DATA_DIRECTORY)
+logger.debug("Done")
 
+logger.debug("Loading the files of all files ...")
 with open(LIST_OF_TRIANGLES_PATH, "r", encoding="UTF-8") as file:
-    downloader_input: List[str] = file.read().split("\n")
+    downloader_input: Dict[str, List[str]] = load(file)
+    logger.debug("Done")
 
-downloader_input = [
-    entry
-    for entry in downloader_input
-    if os.path.basename(entry).replace(".zip", ".csv")
-    not in directory_contents
-]
+logger.debug("Comparing the list of existing files against the full list ...")
+for pair, paths in downloader_input.items():
+    downloader_input[pair] = [
+        entry
+        for entry in paths
+        if os.path.basename(entry).replace(".zip", ".csv")
+        not in directory_contents
+    ]
+logger.debug("List generated. Ready to start downloading.")
 
 try:
+    logger.debug("Download started")
     download(downloader_input, DATA_DIRECTORY)
 except KeyboardInterrupt:
     print("\nDownload interrupted by user.")
