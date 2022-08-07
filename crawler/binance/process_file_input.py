@@ -1,18 +1,25 @@
 """TODO: Add description."""
 
 from logging import Logger, getLogger
-from typing import Collection, Dict, Set, List
+from typing import Collection, Dict, Literal, Set, List
 from datetime import datetime, timedelta
+
+from dateutil.relativedelta import relativedelta
 
 
 class Processing:
     """TODO: Add description."""
 
-    PREFIX: str = "data/spot/daily/klines/"
+    PREFIX: str = "data/spot/{frequency}/klines/"
     INTERVAL: str = "1m"
     START_DATE: datetime = datetime(2021, 3, 1)
 
-    def __init__(self, bases: Collection[str], prefixes: List[str]) -> None:
+    def __init__(
+        self,
+        bases: Collection[str],
+        prefixes: List[str],
+        frequency: Literal["daily", "monthly"],
+    ) -> None:
         """
         TODO: Add description.
 
@@ -25,6 +32,8 @@ class Processing:
         """
         self._bases: Collection[str] = bases
         self._prefixes: List[str] = prefixes
+        self._frequency: Literal["daily", "monthly"] = frequency
+        self._prefix: str = self.PREFIX.format(frequency=frequency)
         self._logger: Logger = getLogger(self.__class__.__name__)
 
     def get_all_zip_files(self) -> Dict[str, List[str]]:
@@ -206,17 +215,64 @@ class Processing:
         -------
         Set[str]
         """
+        result: Set[str] = (
+            self._generate_zip_list_daily(pair)
+            if self._frequency == "daily"
+            else self._generate_zip_list_monthly(pair)
+        )
+        return result
+
+    def _generate_zip_list_daily(self, pair: str) -> Set[str]:
+        """
+        TODO: Add description.
+
+        Parameters
+        ----------
+        pair : str
+            Crypto currency pair. Example: "BTCUSDT"
+
+        Returns
+        -------
+        Set[str]
+        """
         keys: Set[str] = set()
         latest: datetime = datetime.utcnow() - timedelta(1)
 
         while self.START_DATE <= latest:
             keys.add(
                 (
-                    f"{self.PREFIX}{pair}/{self.INTERVAL}/{pair}-"
+                    f"{self._prefix}{pair}/{self.INTERVAL}/{pair}-"
                     f"{self.INTERVAL}-{latest:%Y-%m-%d}.zip"
                 )
             )
             latest -= timedelta(1)
+
+        return keys
+
+    def _generate_zip_list_monthly(self, pair: str) -> Set[str]:
+        """
+        TODO: Add description.
+
+        Parameters
+        ----------
+        pair : str
+            Crypto currency pair. Example: "BTCUSDT"
+
+        Returns
+        -------
+        Set[str]
+        """
+        keys: Set[str] = set()
+        latest: datetime = datetime.utcnow() - relativedelta(months=1)
+
+        while self.START_DATE <= latest:
+            keys.add(
+                (
+                    f"{self._prefix}{pair}/{self.INTERVAL}/{pair}-"
+                    f"{self.INTERVAL}-{latest:%Y-%m}.zip"
+                )
+            )
+            latest -= relativedelta(months=1)
 
         return keys
 

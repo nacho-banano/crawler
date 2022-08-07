@@ -1,9 +1,10 @@
 """TODO: Add description."""
 
+import argparse
 import asyncio
 import json
 from os.path import exists
-from typing import Dict, List, Set
+from typing import Dict, List, Literal, Set
 
 from crawler.binance.web_crawler import get_bases, get_list_of_prefixes
 from crawler.binance.process_file_input import Processing
@@ -16,7 +17,7 @@ from consts import (
 )
 
 
-async def crawl():
+async def crawl(frequency: Literal["daily", "monthly"]):
     """_summary_."""
     lop: List[str] = []
     lor: Dict[str, List[str]] = {}
@@ -48,7 +49,7 @@ async def crawl():
             for entry in file.readlines():
                 lop.append(entry.replace("\n", ""))
 
-    processing: Processing = Processing(lob, lop)
+    processing: Processing = Processing(lob, lop, frequency)
 
     if not exists(LIST_OF_RESOURCES_PATH):
         # Get all file resources for downloading
@@ -77,4 +78,31 @@ async def crawl():
 
 
 if __name__ == "__main__":
-    asyncio.run(crawl())
+    parser = argparse.ArgumentParser("Binance Vision web crawler")
+
+    parser.add_argument(
+        "-d",
+        "--daily",
+        action="store",
+        type=bool,
+        nargs="?",
+        default=False,
+        dest="daily",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--monthly",
+        action="store",
+        type=bool,
+        nargs="?",
+        default=True,
+        dest="monthly",
+    )
+
+    namespace = parser.parse_args(())
+    freq: Literal["daily", "monthly"] = (
+        "daily" if namespace.daily else "monthly"
+    )
+
+    asyncio.run(crawl(freq))
