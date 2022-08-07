@@ -50,11 +50,12 @@ async def download(file_keys: Dict[str, List[str]], output_dir: str) -> None:
                         tmp_file.write(await response.read())
                         logger.info("Downloaded %s", key)
 
+                        basename: str = os.path.basename(key).replace(
+                            ".zip", ".csv"
+                        )
+
                         try:
                             with ZipFile(tmp_file.name, "r") as zip_archive:
-                                basename: str = os.path.basename(key).replace(
-                                    ".zip", ".csv"
-                                )
                                 zip_archive.extract(basename, output_dir)
                         except BadZipFile:
                             logger.error(
