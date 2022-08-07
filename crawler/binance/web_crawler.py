@@ -9,9 +9,8 @@ __author__ = "Nacho Banana"
 from datetime import datetime, timedelta
 from warnings import catch_warnings, simplefilter
 from typing import List, Set
-import json
 
-import requests
+import aiohttp
 from bs4 import BeautifulSoup, Tag
 
 URL_S3: str = "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision"
@@ -86,7 +85,7 @@ def extract_key(pair: str) -> List[str]:
     return keys
 
 
-def get_list_of_prefixes() -> List[str]:
+async def get_list_of_prefixes() -> List[str]:
     """
     Generate a list of Binance prefixes.
 
@@ -94,29 +93,29 @@ def get_list_of_prefixes() -> List[str]:
     -------
     List[str]
     """
-    parameters: dict = {
-        "delimiter": "/",
-        "prefix": PREFIX,
-        "marker": PREFIX,
-    }
     headers: dict = {"Content-Type": "application/xml"}
-    response: requests.Response = requests.get(
-        URL_S3, params=parameters, headers=headers
-    )
+    async with aiohttp.ClientSession(headers=headers) as session:
+        parameters: dict = {
+            "delimiter": "/",
+            "prefix": PREFIX,
+            "marker": PREFIX,
+        }
+        async with session.get(URL_S3, params=parameters) as response:
+            soup = BeautifulSoupProxy(await response.text(), features="lxml")
+            prefixes: List[str] = extract_prefix(soup)
+            next_marker: Tag = soup.find("nextmarker")
 
-    soup = BeautifulSoupProxy(response.text, features="lxml")
-    prefixes: List[str] = extract_prefix(soup)
-    next_marker: Tag = soup.find("nextmarker")
-
-    while next_marker:
-        parameters["marker"] = next_marker.get_text()
-        response = requests.get(URL_S3, params=parameters, headers=headers)
-        soup = BeautifulSoupProxy(response.text, features="lxml")
-        next_prefixes: List[str] = extract_prefix(soup)
-        prefixes.extend(next_prefixes)
-        next_marker: str = soup.find(
-            "nextmarker"
-        )  # re-set the ``next_marker``
+        while next_marker:
+            parameters["marker"] = next_marker.get_text()
+            async with session.get(URL_S3, params=parameters) as response:
+                soup = BeautifulSoupProxy(
+                    await response.text(), features="lxml"
+                )
+                next_prefixes: List[str] = extract_prefix(soup)
+                prefixes.extend(next_prefixes)
+                next_marker: str = soup.find(  # re-set the ``next_marker``
+                    "nextmarker"
+                )
 
     return prefixes
 
@@ -145,10 +144,12 @@ def get_all_pairs(list_of_prefixes: List[str]) -> List[str]:
     return list_of_pairs
 
 
-def get_bases() -> Set[str]:
+async def get_bases() -> Set[str]:
     """Return a list of base tokens."""
-    response = requests.get(URL_BINANCE_EXCHANGE_INFO)
-    data: List[dict] = json.loads(response.text)["symbols"]
+    async with aiohttp.ClientSession() as session:
+        async with session.get(URL_BINANCE_EXCHANGE_INFO) as response:
+            data: List[dict] = (await response.json())["symbols"]
+
     asset_set: Set[str] = set()
 
     for entry in data:
