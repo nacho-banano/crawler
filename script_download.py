@@ -6,7 +6,7 @@ import os
 import sys
 from json import load
 from logging import getLogger, Logger
-from typing import Collection, Dict, List
+from typing import Collection, Dict, List, Literal
 
 from crawler.binance.downloader import download
 
@@ -58,13 +58,20 @@ if __name__ == "__main__":
         type=str,
         nargs="*",
     )
-
-    logger.debug("Loading the list of all files ...")
-    with open(LIST_OF_TRIANGLES_PATH, "r", encoding="UTF-8") as file:
-        pairs_list: Dict[str, List[str]] = load(file)
-        logger.debug("Done")
+    parser.add_argument("-d", "--daily", action="store_true")
 
     namespace = parser.parse_args()
+    freq: Literal["daily", "monthly"] = (
+        "daily" if namespace.daily else "monthly"
+    )
+    path_to_list_of_triangles: str = LIST_OF_TRIANGLES_PATH.format(
+        frequency=freq
+    )
+    # mode: Literal["w", "wb", "rb", "x", "a", "r"] =
+    logger.debug("Loading the list of all files ...")
+    with open(path_to_list_of_triangles, "r", encoding="UTF-8") as file:
+        pairs_list: Dict[str, List[str]] = load(file)
+        logger.debug("Done")
 
     if namespace.downloader_input:
         pairs_list = {

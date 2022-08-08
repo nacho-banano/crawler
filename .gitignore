@@ -139,3 +139,6 @@ list_of_resources
 list_of_bases
 list_of_triangles
 triangles_path.json
+list_of_triangles.json
+list_of_triangles_daily.json
+list_of_triangles_monthly.json

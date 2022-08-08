@@ -54,9 +54,14 @@ async def download(file_keys: Dict[str, List[str]], output_dir: str) -> None:
                             ".zip", ".csv"
                         )
 
+                        basename_output: str = basename[:-7] + basename[-4:]
+
                         try:
                             with ZipFile(tmp_file.name, "r") as zip_archive:
-                                zip_archive.extract(basename, output_dir)
+                                zip_archive.extract(  # TODO: fix me
+                                    basename,
+                                    os.path.join(output_dir, basename_output),
+                                )
                         except BadZipFile:
                             logger.error(
                                 "%s not in zip archive",

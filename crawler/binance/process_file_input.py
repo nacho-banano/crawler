@@ -36,18 +36,7 @@ class Processing:
         self._prefix: str = self.PREFIX.format(frequency=frequency)
         self._logger: Logger = getLogger(self.__class__.__name__)
 
-    def get_all_zip_files(self) -> Dict[str, List[str]]:
-        """
-        Use this to get a list of prefixes.
-
-        Returns
-        -------
-        Dict[str, List[str]]
-            A collection of file resources used to download zips from binance.
-        """
-        return self._get_zip_dict(self._prefixes)
-
-    def get_triangular_zip_files(self) -> dict:
+    def get_triangular_zip_files(self) -> Dict[str, List[str]]:
         """
         TODO: Add a line here.
 
@@ -59,67 +48,31 @@ class Processing:
         dict
             A filtered dictionary with valid triangular pairings.
         """
-        result: dict = self.get_triangles()
+        result: Set[str] = self.get_triangles()
 
-        return {
-            "valid_path_set": self._get_zip_dict(result["valid_path_set"]),
-            "valid_paths": result["valid_paths"],
-        }
+        return self._get_zip_dict(result)
 
-    def get_single_triangular_zip_files(
-        self, triangle: Collection[str]
-    ) -> Dict[str, List[str]]:
-        """
-        Use this for specific triangular path data downloads.
-
-        Parameters
-        ----------
-        list_of_prefixes : List[str]
-            A list of size 3 that contains a valid triangular path of prefixes,
-            for example:
-                [
-                    "data/spot/daily/klines/BTCXNO",
-                    "data/spot/daily/klines/XNOETH",
-                    "data/spot/daily/klines/ETHBTC"
-                ]
-
-        Returns
-        -------
-        Dict[str, List[str]]
-            A dictionary of file resources used to download zips from binance
-            data based on the input.
-        """
-        return self._get_zip_dict(triangle)
-
-    def get_triangles(self) -> dict:
+    def get_triangles(self) -> List[str]:
         """
         Return a filtered list with only valid pairs of triangular paths.
 
         Returns
         -------
-        dict
+        List[str]
         """
-        result: dict = {}
-        valid_path_set: Set[str] = set()
-        valid_paths: List[dict] = []
+        valid_path_set: List[str] = []
 
         for base in self._bases:
             filter_results = self._filter_list(
                 base, self._get_all_pairs(self._prefixes)
             )
 
-            for filter_result in filter_results["valid_path_set"]:
-                valid_path_set.add(filter_result)
+            for filter_result in filter_results:
+                valid_path_set.append(filter_result)
 
-            for filter_result in filter_results["valid_paths"]:
-                valid_paths.append(filter_result)
+        return sorted(valid_path_set, reverse=True)
 
-        result["valid_path_set"] = valid_path_set
-        result["valid_paths"] = valid_paths
-
-        return result
-
-    def _filter_list(self, base: str, pairs: Set[str]) -> dict:
+    def _filter_list(self, base: str, pairs: Set[str]) -> Set[str]:
         """
         Create a set of valid list of triangular pairs.
 
@@ -132,12 +85,10 @@ class Processing:
 
         Returns
         -------
-        dict
+        Set[str]
             _description_
         """
-        result: dict = {}
         valid_path_set: Set[str] = set()
-        valid_paths: List[dict] = []
 
         for step_one in pairs:
             # check if the base is in the pair
@@ -162,18 +113,8 @@ class Processing:
                             valid_path_set.add(step_one)
                             valid_path_set.add(step_two)
                             valid_path_set.add(step_three)
-                            valid_paths.append(
-                                {
-                                    "base": step_one,
-                                    "intermediate": step_two,
-                                    "ticker": step_three,
-                                }
-                            )
 
-        result["valid_path_set"] = valid_path_set
-        result["valid_paths"] = valid_paths
-
-        return result
+        return valid_path_set
 
     def _get_zip_dict(self, prefixes: List[str]) -> Dict[str, List[str]]:
         """
