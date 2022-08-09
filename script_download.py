@@ -56,7 +56,7 @@ if __name__ == "__main__":
         "downloader_input",
         action="store",
         type=str,
-        nargs="*",
+        nargs="+",
     )
     parser.add_argument("-d", "--daily", action="store_true")
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     path_to_list_of_triangles: str = LIST_OF_TRIANGLES_PATH.format(
         frequency=freq
     )
-    # mode: Literal["w", "wb", "rb", "x", "a", "r"] =
+
     logger.debug("Loading the list of all files ...")
     with open(path_to_list_of_triangles, "r", encoding="UTF-8") as file:
         pairs_list: Dict[str, List[str]] = load(file)

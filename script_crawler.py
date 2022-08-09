@@ -25,9 +25,7 @@ async def crawl(frequency: Literal["daily", "monthly"]):
 
     # Write the base tokens to a file
     with open(
-        LIST_OF_TRIANGLES_PATH.format(frequency=frequency),
-        "w",
-        encoding="UTF-8",
+        LIST_OF_TRIANGLES_PATH.format(frequency=frequency), "wb"
     ) as file:
         json.dump(list_of_triangles, file, indent=2)
 
